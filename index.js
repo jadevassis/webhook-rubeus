@@ -41,6 +41,24 @@ app.post('/webhook-rubeus', async (req, res) => {
   }
 });
 
+// ✅ Rota nova: visualizar os logs
+app.get('/logs', (req, res) => {
+  try {
+    const logPath = path.join(__dirname, 'logs', 'webhook.log.jsonl');
+    if (!fs.existsSync(logPath)) {
+      return res.status(404).json({ mensagem: 'Nenhum log encontrado.' });
+    }
+
+    const data = fs.readFileSync(logPath, 'utf8');
+    const linhas = data.trim().split('\n').map(linha => JSON.parse(linha));
+
+    res.json(linhas);
+  } catch (err) {
+    console.error('Erro ao ler logs:', err.message);
+    res.status(500).send('Erro ao ler os logs');
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
