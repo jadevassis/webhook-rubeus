@@ -1,43 +1,25 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const app = express();
+require('dotenv').config();
+const { buscarContatoPorId } = require('./services/rubeusService');
 
-app.use(express.json());
+app.post('/webhook-rubeus', async (req, res) => {
+  const payload = req.body;
 
-// Diretório de logs
-const LOG_DIR = path.join(__dirname, 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'webhook.log.jsonl');
+  try {
+    let logData = payload;
 
-// Garante que a pasta de logs existe
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR);
-}
-
-app.post('/webhook-rubeus', (req, res) => {
-  const data = req.body;
-
-  const logEntry = JSON.stringify({
-    recebido_em: new Date().toISOString(),
-    payload: data
-  });
-
-  fs.appendFile(LOG_FILE, logEntry + '\n', (err) => {
-    if (err) {
-      console.error('Erro ao gravar log:', err);
-      return res.status(500).send('Erro ao registrar webhook');
+    // Se só veio idPessoa, buscamos o resto dos dados
+    if (payload.idPessoa && !payload.nome) {
+      const contato = await buscarContatoPorId(payload.idPessoa);
+      logData = { ...payload, ...contato };
     }
 
-    console.log('📩 Webhook recebido e registrado');
-    res.status(200).send('Webhook recebido com sucesso');
-  });
-});
+    const logPath = path.join(__dirname, 'logs', 'webhook.log.jsonl');
+    const logString = JSON.stringify(logData) + '\n';
+    fs.appendFileSync(logPath, logString);
 
-app.get('/', (req, res) => {
-  res.send('Servidor webhook Rubeus ativo');
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    res.send('Webhook recebido com sucesso');
+  } catch (err) {
+    console.error('Erro ao processar webhook:', err.message);
+    res.status(500).send('Erro interno');
+  }
 });
