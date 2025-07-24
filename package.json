@@ -1,0 +1,12 @@
+{
+  "name": "webhook-rubeus",
+  "version": "1.0.0",
+  "description": "Servidor para receber webhooks da Rubeus e salvar em arquivo",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
